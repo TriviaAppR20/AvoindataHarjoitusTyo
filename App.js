@@ -5,6 +5,11 @@ import React, { useState, useEffect, useContext } from "react";
 export default function App() {
 
   const [categories, setCategories] = useState([]);
+  const [amountOfQuestions, setAmountOfQuestions] = useState("");
+  const [category, setCategory] = useState("");
+  const [difficulty, setDifficulty] = useState("");
+  const [type, setType] = useState("");
+  const [apiSessionToken, setApiSessionToken] = useState("");
 
 
   //fetch categories
@@ -41,6 +46,44 @@ export default function App() {
     }
   };
 
+
+// Fetches session token from API. If successful it is returned.
+  const fetchApiSessionToken = async () => {
+    try {
+      const response = await fetch(
+        "https://opentdb.com/api_token.php?command=request"
+      );
+      const data = await response.json();
+      if (data.response_code === 0) {
+        return data.token;
+      } else {
+        console.error(
+          `Error fetching token: ${data.response_message}. Error code: ${data.response_code}`
+        );
+        Alert.alert(
+          `Error fetching token: ${data.response_message}. Error code: ${data.response_code}`
+        );
+      }
+    } catch (err) {
+      console.error(`Unexpected error: ${err}`);
+      Alert.alert(`Unexpected error: ${err}`);
+    }
+  };
+
+
+// Generates the url for the query on specified amount, category, difficulty and token
+  const generateQueryUrl = () => {
+    const apiUrl = "https://opentdb.com/api.php";
+    const queryParams = [`amount=${amountOfQuestions}`];
+
+    if (category) queryParams.push(`category=${category}`);
+    if (difficulty) queryParams.push(`difficulty=${difficulty}`);
+    if (type) queryParams.push(`type=${type}`);
+    if (apiSessionToken) queryParams.push(`token=${apiSessionToken}`);
+
+    const queryUrl = `${apiUrl}?${queryParams.join("&")}`;
+    return queryUrl;
+  };
 
 
   return (
