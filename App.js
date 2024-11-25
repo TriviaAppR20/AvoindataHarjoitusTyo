@@ -10,6 +10,7 @@ export default function App() {
   const [difficulty, setDifficulty] = useState("");
   const [type, setType] = useState("");
   const [apiSessionToken, setApiSessionToken] = useState("");
+  const [isTokenEmpty, setIsTokenEmpty] = useState(false);
 
 
   //fetch categories
@@ -24,13 +25,86 @@ export default function App() {
     }
   };
 
+   // Fetches a new API session token and returns it
+   const fetchApiSessionToken = async () => {
+    try {
+      const response = await fetch(
+        "https://opentdb.com/api_token.php?command=request"
+      );
+      const data = await response.json();
+      if (data.response_code === 0) {
+        return data.token;
+      } else {
+        console.error(
+          `Error fetching token: ${data.response_message}. Error code: ${data.response_code}`
+        );
+        Alert.alert(
+          `Error fetching token: ${data.response_message}. Error code: ${data.response_code}`
+        );
+      }
+    } catch (err) {
+      console.error(`Unexpected error: ${err}`);
+      Alert.alert(`Unexpected error: ${err}`);
+    }
+  };
+
+   // Requests the api to reset the current API session token
+   const resetApiSessionToken = async () => {
+    try {
+      const response = await fetch(
+        `https://opentdb.com/api_token.php?command=reset&token=${apiSessionToken}`
+      );
+      const data = await response.json();
+      if (data.response_code === 0) {
+        Alert.alert("Reset successful!");
+        hideTokenEmpty();
+      } else {
+        Alert.alert("Error. Something went wrong while resetting the token");
+      }
+    } catch (err) {
+      console.error(`Error resetting token: ${err}`);
+    }
+  };
+
+  const getApiSessionToken = async () => {
+    try {
+      // Get existing token from async storage and make a test query to the api with it
+      const existingToken = await AsyncStorage.getItem("API-Token");
+      const response = await fetch(
+        `https://opentdb.com/api.php?amount=5&token=${existingToken}`
+      );
+      const data = await response.json();
+      // If there was an existing token in async storage and the API doesn't return code 3 (token does not exist)
+      if (existingToken !== null && data.response_code !== 3) {
+        // Then we set the state variable to the existing token
+        setApiSessionToken(existingToken);
+      } else {
+        // Else we request a new token from the API and save that in state as well as async storage
+        const token = await fetchApiSessionToken();
+        await AsyncStorage.setItem("API-Token", token);
+        setApiSessionToken(token);
+      }
+    } catch (err) {
+      console.error(`Unexpected error: ${err}`);
+      Alert.alert(`Unexpected error: ${err}`);
+    }
+  };
+
   //fetch categories
   //on component mount
   useEffect(() => {
     fetchCategories();
-    //get api session token here
+    getApiSessionToken();
   }, []);
 
+  const showTokenEmpty = () => {
+    setIsTokenEmpty(true);
+    StatusBar.setBackgroundColor(isDarkMode ? "#000" : "rgba(0,0,0,0.7)");
+  };
+  const hideTokenEmpty = () => {
+    setIsTokenEmpty(false);
+    StatusBar.setBackgroundColor(isDarkMode ? "#000" : "#FFF");
+  };
   
 //fetch questions
 //from the api
