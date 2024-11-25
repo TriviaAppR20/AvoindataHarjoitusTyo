@@ -129,7 +129,7 @@ export default function App() {
     try {
       const data = await fetchQuestions();
       if (data.response_code === 0) {
-        navigation.navigate("Game", { questions: data.results });
+        console.log("Here we would have moved to the game screen successfully!")
       } else if (data.response_code === 4) {
         showTokenEmpty();
       } else {
